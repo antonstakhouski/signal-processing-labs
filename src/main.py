@@ -10,17 +10,24 @@ import matplotlib.gridspec as gridspec
 
 class Calculator:
     def __init__(self):
-        self.n = 32
+        self.n = 8
         self.start = 0.0
         self.end = 2 * math.pi
         self.step = (self.end - self.start) / self.n
+
         self.x_array = np.arange(self.start, self.end, self.step)
         self.y_array = self.y(self.x_array)
+        self.z_array = self.z(self.x_array)
+        self.arrays = [self.y_array, self.z_array]
+
         self.dft_array = list()
         self.count = 0
 
     def y(self, x):
-        return np.cos(2 * x) + np.sin(5 * x)
+        return np.cos(2 * x)
+
+    def z(self, x):
+        return np.sin(5 * x)
 
     def dft(self, k):
         m = 0
@@ -46,29 +53,20 @@ class Calculator:
         b_even = self.fft_dit(a_even, direct)
         b_odd = self.fft_dit(a_odd, direct)
 
-        #  print(self.count)
         self.count += 1
 
-        #  print(b_even)
-        #  print(b_odd)
         argument = 2 * cmath.pi / len(a)
         wn = cmath.cos(argument) + direct * cmath.sqrt(-1) * cmath.sin(argument)
 
         w = np.complex(1)
-        #  print(w)
 
         y = [np.complex(0)] * len(a)
         j = 0
         while(j < len(a) // 2):
             y[j] = b_even[j] + w * b_odd[j]
-            #  print(y[j])
-            #  self.t(y[j])
             y[j + len(a) // 2] = b_even[j] - w * b_odd[j]
-            #  print(y[j] + len(a) // 2)
-            #  self.t(y[j] + len(a) // 2)
             w *= wn
             j += 1
-        #  print(y)
         return y
 
     def t(self, x):
@@ -83,11 +81,15 @@ class Calculator:
             k += 1
         return x
 
-    def draw_signal(self, fignum):
-        plt.subplot(fignum)
-        plt.title("Default signal")
-        abs_y = np.absolute(self.y_array)
-        plt.vlines(self.x_array, 0, abs_y)
+    def draw_signals(self, grid, pos):
+        label = ["y", "z"]
+        for i in range(0, len(label)):
+            plt.subplot(grid[i, pos])
+            title = "Default " + label[i] + " signal"
+            plt.title(title)
+            value = self.arrays[i]
+            abs_val = self.get_abs(value)
+            plt.vlines(self.x_array, 0, abs_val)
 
     def draw_dft(self, fignum):
         plt.subplot(fignum)
@@ -114,13 +116,17 @@ class Calculator:
         abs_y = np.absolute(arr)
         plt.vlines(self.x_array, 0, abs_y)
 
+    def get_abs(self, lst):
+        abs_lst = list()
+        for num in lst:
+            abs_lst.append(np.absolute(num.real))
+        return abs_lst
+
     def draw_fft(self, fignum):
         plt.subplot(fignum)
         plt.title("Fast Fourier Transform")
         fft_array = self.fft_dit(self.y_array, -1)
         self.dft_array = fft_array
-        #  print(type(fft_array[0]))
-        print(fft_array)
 
         abs_y = list()
         for num in fft_array:
@@ -140,14 +146,34 @@ class Calculator:
             abs_y.append(np.absolute(num))
         plt.vlines(self.x_array, 0, abs_y)
 
+    def draw_fft_corr_conv(self, grid, pos):
+        ftype = "FFT "
+        titles = [ftype + "Correlation", ftype + "Convolution"]
+        fft_corr_conv = self.fft_corr_conv()
+        for i in range(0, len(titles)):
+            plt.subplot(grid[i, pos])
+            plt.title(titles[i])
+            value = fft_corr_conv[i]
+            abs_val = self.get_abs(value)
+            plt.vlines(self.x_array, 0, abs_val)
+
+    def fft_corr_conv(self):
+        cy = self.fft_dit(self.y_array, -1)
+        cz = self.fft_dit(self.y_array, -1)
+        corr = list()
+        conv = list()
+        for i in range(0, self.n):
+            corr.append(np.conjugate(cy[i]) * cz[i])
+            conv.append(cy[i] * cz[i])
+        corr = self.fft_dit(corr, 1)
+        conv = self.fft_dit(conv, 1)
+        return (corr, conv)
+
     def draw(self):
         gs = gridspec.GridSpec(2, 3)
-        self.draw_signal(gs[0, 0])
-        self.draw_dft(gs[0, 1])
-        self.draw_idft(gs[1, 1])
-
-        self.draw_fft(gs[0, 2])
-        self.draw_fft_inv(gs[1, 2])
+        self.draw_signals(gs, 0)
+        self.draw_fft_corr_conv(gs, 1)
+        print(self.fft_corr_conv())
         plt.show()
 
 
