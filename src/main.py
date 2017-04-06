@@ -12,7 +12,7 @@ class Calculator:
     def __init__(self):
         self.n = 8
         self.start = 0.0
-        self.end = 2 * math.pi
+        self.end = math.pi
         self.step = (self.end - self.start) / self.n
 
         self.x_array = np.arange(self.start, self.end, self.step)
@@ -146,20 +146,17 @@ class Calculator:
             abs_y.append(np.absolute(num))
         plt.vlines(self.x_array, 0, abs_y)
 
-    def draw_fft_corr_conv(self, grid, pos):
-        ftype = "FFT "
-        titles = [ftype + "Correlation", ftype + "Convolution"]
-        fft_corr_conv = self.fft_corr_conv()
+    def draw_corr_conv(self, corr_conv, titles, grid, pos):
         for i in range(0, len(titles)):
             plt.subplot(grid[i, pos])
             plt.title(titles[i])
-            value = fft_corr_conv[i]
+            value = corr_conv[i]
             abs_val = self.get_abs(value)
             plt.vlines(self.x_array, 0, abs_val)
 
     def fft_corr_conv(self):
         cy = self.fft_dit(self.y_array, -1)
-        cz = self.fft_dit(self.y_array, -1)
+        cz = self.fft_dit(self.z_array, -1)
         corr = list()
         conv = list()
         for i in range(0, self.n):
@@ -169,11 +166,35 @@ class Calculator:
         conv = self.fft_dit(conv, 1)
         return (corr, conv)
 
+    def draw_all_corr_conv(self, grid, pos):
+        ftype = ["Simple ", "FFT "]
+        flst = [self.corr_conv(), self.fft_corr_conv()]
+        for i in range(0, len(ftype)):
+            titles = [ftype[i] + "Correlation", ftype[i] + "Convolution"]
+            corr_conv = flst[i]
+            self.draw_corr_conv(corr_conv, titles, grid, pos + i)
+
+    def corr_conv(self):
+        corr = list()
+        conv = list()
+        for m in range(0, self.n):
+            corr_sum = 0
+            conv_sum = 0
+            for h in range(0, self.n):
+                corr_sum += self.y(h) * self.z(m + h)
+                conv_sum += self.y(h) * self.z(m - h)
+            mul = 1 / self.n
+            corr.append(mul * corr_sum)
+            conv.append(mul * conv_sum)
+        return (corr, conv)
+
     def draw(self):
         gs = gridspec.GridSpec(2, 3)
         self.draw_signals(gs, 0)
-        self.draw_fft_corr_conv(gs, 1)
-        print(self.fft_corr_conv())
+        print(self.corr_conv())
+        self.draw_all_corr_conv(gs, 1)
+        #  print(self.fft_corr_conv()[0])
+        #  print(self.fft_corr_conv()[1])
         plt.show()
 
 
