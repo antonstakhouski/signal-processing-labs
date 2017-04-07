@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import cmath
 import math
 import matplotlib.gridspec as gridspec
-#  import ipdb
 
 
 class Calculator:
@@ -181,8 +180,8 @@ class Calculator:
             corr_sum = 0
             conv_sum = 0
             for h in range(0, self.n):
-                corr_sum += self.y(h) * self.z(m + h)
-                conv_sum += self.y(h) * self.z(m - h)
+                corr_sum += self.y_array[h] * self.z_array[(m + h) % self.n]
+                conv_sum += self.y_array[h] * self.z_array[m - h]
             mul = 1 / self.n
             corr.append(mul * corr_sum)
             conv.append(mul * conv_sum)
@@ -191,15 +190,10 @@ class Calculator:
     def draw(self):
         gs = gridspec.GridSpec(2, 3)
         self.draw_signals(gs, 0)
-        print(self.corr_conv())
         self.draw_all_corr_conv(gs, 1)
-        #  print(self.fft_corr_conv()[0])
-        #  print(self.fft_corr_conv()[1])
         plt.show()
 
 
 if __name__ == '__main__':
     calc = Calculator()
-    #  ipdb.set_trace()
-    #  calc.fft_dit(calc.x_array, calc.n, 1)
     calc.draw()
